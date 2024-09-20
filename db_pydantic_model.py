@@ -1,5 +1,3 @@
-# This file contains the Pydantic models for the database tables.
-# These models are used to validate the data that is sent to the client.
 
 
 from pydantic import BaseModel

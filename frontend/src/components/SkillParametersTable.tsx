@@ -11,6 +11,16 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { Skill } from './SkillTable';
 
 interface SkillDetail {
@@ -22,7 +32,7 @@ interface SkillDetail {
   is_required: number;
   item_type: number | string;
 }
-// Mapping of item types
+
 const itemTypeMapping: { [key: number]: string } = {
   1: 'string',
   2: 'number',
@@ -39,6 +49,7 @@ interface SkillDetailTableProps {
 
 const SkillDetailTable: React.FC<SkillDetailTableProps> = ({ skill }) => {
   const [parameters, setParameters] = useState<SkillDetail[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     axios
@@ -47,14 +58,43 @@ const SkillDetailTable: React.FC<SkillDetailTableProps> = ({ skill }) => {
         const updatedParameters = response.data.map(
           (parameter: SkillDetail) => ({
             ...parameter,
-            item_type: itemTypeMapping[parameter.item_type as number], // Explicitly cast to number
-            value_type: itemTypeMapping[parameter.value_type as number], // Explicitly cast to number
+            item_type: itemTypeMapping[parameter.item_type as number],
+            value_type: itemTypeMapping[parameter.value_type as number],
           })
         );
         setParameters(updatedParameters);
       })
       .catch((error) => console.error('Error fetching skill details:', error));
   }, [skill.skill_id]);
+
+  const handleItemTypeChange = (parameterId: string, newItemType: string) => {
+    const itemTypeKey = parseInt(
+      Object.keys(itemTypeMapping).find(
+        (key) => itemTypeMapping[key] === newItemType
+      ) || '0'
+    );
+    axios
+      .put(
+        `http://127.0.0.1:8000/edit_parameter_item_type/${parameterId}/${itemTypeKey}`
+      )
+      .then(() => {
+        toast({
+          title: 'Success',
+          description: 'Item type updated successfully',
+        });
+        setParameters((prevParameters) =>
+          prevParameters.map((parameter) =>
+            parameter.parameter_id === parameterId
+              ? { ...parameter, item_type: newItemType }
+              : parameter
+          )
+        );
+      })
+      .catch((error) => {
+        console.error('Error updating item type:', error);
+        toast({ title: 'Error', description: 'Failed to update item type' });
+      });
+  };
 
   return (
     <Tabs defaultValue="raw-sql" className="w-full">
@@ -65,7 +105,7 @@ const SkillDetailTable: React.FC<SkillDetailTableProps> = ({ skill }) => {
         <TabsTrigger value="claude">Claude</TabsTrigger>
       </TabsList>
       <TabsContent value="raw-sql">
-        <SQLTable data={parameters} />
+        <SQLTable data={parameters} onItemTypeChange={handleItemTypeChange} />
       </TabsContent>
       <TabsContent value="gemini">{/* Empty content for now */}</TabsContent>
       <TabsContent value="openai">
@@ -78,7 +118,10 @@ const SkillDetailTable: React.FC<SkillDetailTableProps> = ({ skill }) => {
   );
 };
 
-const SQLTable: React.FC<{ data: SkillDetail[] }> = ({ data }) => {
+const SQLTable: React.FC<{
+  data: SkillDetail[];
+  onItemTypeChange: (parameterId: string, newItemType: string) => void;
+}> = ({ data, onItemTypeChange }) => {
   return (
     <Table>
       <TableCaption>Skill Details</TableCaption>
@@ -99,7 +142,28 @@ const SQLTable: React.FC<{ data: SkillDetail[] }> = ({ data }) => {
             <TableCell>{parameter.name}</TableCell>
             <TableCell>{parameter.description}</TableCell>
             <TableCell>{parameter.value_type}</TableCell>
-            <TableCell>{parameter.item_type}</TableCell>
+            <TableCell>
+              <Select
+                value={parameter.item_type as string}
+                onValueChange={(value) =>
+                  onItemTypeChange(parameter.parameter_id, value)
+                }
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={parameter.item_type} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Item Types</SelectLabel>
+                    {Object.values(itemTypeMapping).map((itemType) => (
+                      <SelectItem key={itemType} value={itemType}>
+                        {itemType}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </TableCell>
             <TableCell>{parameter.is_required}</TableCell>
           </TableRow>
         ))}
@@ -131,7 +195,6 @@ const OpenAIPrompt: React.FC<{
       };
     });
 
-    // If is_required is 1, add the name to required array
     parameters.forEach((parameter) => {
       if (parameter.is_required === 1) {
         required.push(parameter.name);
@@ -186,7 +249,6 @@ const ClaudePrompt: React.FC<{
       };
     });
 
-    // If is_required is 1, add the name to required array
     parameters.forEach((parameter) => {
       if (parameter.is_required === 1) {
         required.push(parameter.name);
@@ -212,4 +274,5 @@ const ClaudePrompt: React.FC<{
     </ScrollArea>
   );
 };
+
 export default SkillDetailTable;

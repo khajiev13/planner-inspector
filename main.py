@@ -1,3 +1,22 @@
+"""
+这个模块使用 FastAPI 框架构建了一个简单的 Web 应用程序，并与 SQLAlchemy 数据库进行交互。主要功能包括：
+
+1. 配置 CORS 中间件以允许特定的来源访问 API。
+2. 创建一个数据库会话依赖项，以便在请求期间管理数据库连接。
+3. 定义了几个 API 端点：
+    - 根端点 ("/")：返回一个简单的欢迎消息。
+    - 获取所有最近技能 ("/get_all_recent_skills")：执行 SQL 查询以获取所有最近的技能，并返回技能列表。
+    - 获取技能参数 ("/get_parameters_for_skills/{skill_id:int}")：根据技能 ID 获取技能参数，并返回参数列表。
+    - 编辑技能提示 ("/edit_skill_prompt/{skill_id:int}/{prompt:str}")：根据技能 ID 更新技能提示。
+    - 编辑参数描述 ("/edit_parameter_description/{parameter_id:str}/{description:str}")：根据参数 ID 更新参数描述。
+    - 改item_type ("/edit_parameter_item_type/{parameter_id:str}/{item_type:int}")：根据参数 ID 更新参数item_type。
+
+模块依赖于以下外部库：
+- FastAPI：用于构建 Web API。
+- SQLAlchemy：用于与数据库进行交互。
+- Pydantic：用于数据验证和序列化。
+"""
+
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import text
@@ -130,6 +149,8 @@ def edit_parameter_description(parameter_id: str, description: str, db: Session 
 
 @app.put("/edit_parameter_item_type/{parameter_id:str}/{item_type:int}")
 def edit_parameter_item_type(parameter_id: str, item_type: int, db: Session = Depends(get_db)):
+    # Raise an exception error if parameters dont exist
+
     query = text("""
     UPDATE
         z_skill_version_parameter
