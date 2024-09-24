@@ -1,0 +1,133 @@
+<FormField
+  control={form.control}
+  name="name"
+  render={({ field }) => (
+    <FormItem>
+      <div className="grid gap-2">
+        <Label htmlFor={`subject-${id}`}>Name</Label>
+        <Input
+          form={form}
+          name="name"
+          id={`subject-${id}`}
+          placeholder="order"
+          {...field}
+        />
+      </div>
+    </FormItem>
+  )}
+/>;
+
+{
+  /* 
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="grid gap-2">
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder='How to sort the videos, should be "asc" or "desc"'
+                        {...field}
+                      />
+                    </FormControl>
+                  </div>
+                </FormItem>
+              )}
+            /> */
+}
+
+<div className="grid gap-4 sm:grid-cols-2">
+  <div className="grid gap-2">
+    <Label htmlFor={`area-${id}`}>Value Type</Label>
+    <FormField
+      control={form.control}
+      name="value_type"
+      render={({ field }) => (
+        <FormItem>
+          <Select defaultValue="" value={String(field.value)} name={field.name}>
+            <SelectTrigger id={`area-${id}`} aria-label="Area" ref={field.ref}>
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              {/* Put keys as value and the content as the value of the dictionary */}
+              {Object.entries(itemTypeMapping).map(([key, value]) => (
+                <SelectItem key={key} value={key}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormItem>
+      )}
+    />
+  </div>
+  <div className="grid gap-2">
+    <Label htmlFor={`security-level-${id}`}>Item Type</Label>
+    <Select defaultValue="">
+      <SelectTrigger id={`area-${id}`} aria-label="Area">
+        <SelectValue placeholder="Select" />
+      </SelectTrigger>
+      <SelectContent>
+        {/* Put keys as value and the content as the value of the dictionary */}
+        {Object.entries(itemTypeMapping).map(([key, value]) => (
+          <SelectItem key={key} value={key}>
+            {value}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+</div>;
+{
+  /* <div className="grid gap-2">
+              <Label htmlFor={`subject-${id}`}>Value enum</Label>
+              <Input
+                id={`subject-${id}`}
+                placeholder="e.g: film,drama,any. asc,desc"
+              />
+            </div> */
+}
+{
+  /* <div className="grid gap-2">
+              <Label htmlFor={`is_required`}>Is this parameter required?</Label>
+              <Select defaultValue="">
+                <SelectTrigger id={`is_required`} aria-label="Area">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem key={1} value={'Yes'}>
+                    Yes
+                  </SelectItem>
+                  <SelectItem key={0} value={'No'}>
+                    No
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div> */
+}
+{
+  /* <div className="grid gap-2">
+              <Label htmlFor={`status`}>Status</Label>
+              <Select defaultValue="">
+                <SelectTrigger id={`status`} aria-label="Area">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem key={1} value={'On'}>
+                    On
+                  </SelectItem>
+                  <SelectItem key={0} value={'Off'}>
+                    Off
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div> */
+}
+{
+  /* <div className="grid gap-2">
+              <Label htmlFor={`subject-${id}`}>Created By (email)</Label>
+              <Input id={`create_by`} placeholder="aaa@bbb.com" />
+            </div> */
+}

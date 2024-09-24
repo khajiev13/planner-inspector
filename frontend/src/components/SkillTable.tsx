@@ -17,16 +17,7 @@ import { Input } from './ui/input';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import SkillDetailTable from './SkillParametersTable';
-
-export interface Skill {
-  skill_id: number;
-  version_id: number;
-  name: string;
-  enabled_by_default: number;
-  input_use_schema: number;
-  endpoint: string;
-  prompt: string;
-}
+import { Skill } from './types';
 
 const EditableTableCell: React.FC<{
   entry: { skill_id: number; prompt: string };

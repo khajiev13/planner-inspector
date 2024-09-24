@@ -1,22 +1,5 @@
-"""
-这个模块使用 FastAPI 框架构建了一个简单的 Web 应用程序，并与 SQLAlchemy 数据库进行交互。主要功能包括：
-
-1. 配置 CORS 中间件以允许特定的来源访问 API。
-2. 创建一个数据库会话依赖项，以便在请求期间管理数据库连接。
-3. 定义了几个 API 端点：
-    - 根端点 ("/")：返回一个简单的欢迎消息。
-    - 获取所有最近技能 ("/get_all_recent_skills")：执行 SQL 查询以获取所有最近的技能，并返回技能列表。
-    - 获取技能参数 ("/get_parameters_for_skills/{skill_id:int}")：根据技能 ID 获取技能参数，并返回参数列表。
-    - 编辑技能提示 ("/edit_skill_prompt/{skill_id:int}/{prompt:str}")：根据技能 ID 更新技能提示。
-    - 编辑参数描述 ("/edit_parameter_description/{parameter_id:str}/{description:str}")：根据参数 ID 更新参数描述。
-    - 改item_type ("/edit_parameter_item_type/{parameter_id:str}/{item_type:int}")：根据参数 ID 更新参数item_type。
-
-模块依赖于以下外部库：
-- FastAPI：用于构建 Web API。
-- SQLAlchemy：用于与数据库进行交互。
-- Pydantic：用于数据验证和序列化。
-"""
-
+import uuid
+import datetime
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import text
@@ -24,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import database
 from db_pydantic_model import Skills, SkillParameter
 from typing import List
-from fastapi.responses import JSONResponse
+from fastapi import Response
+from fastapi.exceptions import HTTPException
 
 app = FastAPI()
 
@@ -32,7 +16,6 @@ app = FastAPI()
 origins = [
     "http://localhost:5173",
     "http://localhost:5174",
-    "http://127.0.0.1:5173",
 ]
 
 app.add_middleware(
@@ -128,7 +111,7 @@ def edit_skill_prompt(skill_id: int, prompt: str, db: Session = Depends(get_db))
     db.execute(query, {"skill_id": skill_id, "prompt": prompt})
     # Commit the changes
     db.commit()
-    return JSONResponse(content={"message": "Prompt updated successfully"}, status_code=204)
+    return Response(content="Prompt updated successfully", status_code=204)
 
 
 @app.put("/edit_parameter_description/{parameter_id:str}/{description:str}")
@@ -144,7 +127,7 @@ def edit_parameter_description(parameter_id: str, description: str, db: Session 
     db.execute(query, {"parameter_id": parameter_id,
                "description": description})
     db.commit()
-    return JSONResponse(content={"message": "Description updated successfully"}, status_code=204)
+    return Response(content="Description updated successfully", status_code=204)
 
 
 @app.put("/edit_parameter_item_type/{parameter_id:str}/{item_type:int}")
@@ -161,4 +144,57 @@ def edit_parameter_item_type(parameter_id: str, item_type: int, db: Session = De
     """)
     db.execute(query, {"parameter_id": parameter_id, "item_type": item_type})
     db.commit()
-    return JSONResponse(content={"message": "Item type updated successfully"}, status_code=204)
+    return Response(content="Item type updated successfully", status_code=204)
+
+
+@app.put("/edit_parameter_description/{parameter_id}/{description}")
+def edit_parameter_description(parameter_id: str, description: str, db: Session = Depends(get_db)):
+    if not parameter_id or not description:
+        raise HTTPException(
+            status_code=400, detail="Parameter ID and description must be provided")
+
+    try:
+        query = text("""
+        UPDATE
+            z_skill_version_parameter
+        SET
+            description = :description
+        WHERE
+            parameter_id = :parameter_id
+        """)
+        db.execute(query, {"parameter_id": parameter_id,
+                   "description": description})
+        db.commit()
+
+        return Response(content="Description updated successfully", status_code=204)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@app.post("/create_parameter")
+def create_parameter(parameter: SkillParameter, db: Session = Depends(get_db)):
+    try:
+        # Generate a unique ID
+        parameter.parameter_id = str(uuid.uuid4())
+        # Generate current timestamp
+        current_time = int(datetime.datetime.now().timestamp() * 1000)
+        parameter.create_time = current_time
+        parameter.update_time = current_time
+
+        parameter.update_by = parameter.create_by
+        print(parameter)
+
+        query = text("""
+        INSERT INTO z_skill_version_parameter
+        (parameter_id, skill_version_id, name, description, value_type, value_enum, item_type, is_required, status, create_time, create_by, update_time, update_by)
+        VALUES
+        (:parameter_id, :skill_version_id, :name, :description, :value_type, :value_enum, :item_type, :is_required, :status, :create_time, :create_by, :update_time, :update_by)
+        """)
+        db.execute(query, parameter.model_dump())
+        db.commit()
+        return Response(content="Parameter created successfully", status_code=201)
+    except Exception as e:
+        print(e)
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Internal Server Error")

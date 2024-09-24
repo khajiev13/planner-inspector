@@ -27,10 +27,17 @@ class Skills(BaseModel):
 
 
 class SkillParameter(BaseModel):
-    parameter_id: str
+    # Parameters are optional none when using get request but we need them for creating a new parameter
+    skill_version_id: Optional[int] = None
+    parameter_id: Optional[str] = None
     name: str
     description: str
     value_type: int
     value_enum: Optional[str] = None
     is_required: int
     item_type: Optional[int] = None
+    status: Optional[int] = None
+    create_time: Optional[int] = None
+    create_by: Optional[str] = None
+    update_time: Optional[int] = None
+    update_by: Optional[str] = None
